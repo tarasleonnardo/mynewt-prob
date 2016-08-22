@@ -6,7 +6,7 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
@@ -17,38 +17,43 @@
  * under the License.
  */
 
-#include <assert.h>
-#include <stddef.h>
+#ifndef H_HAL_PWM_INT_
+#define H_HAL_PWM_INT_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <hal/hal_pwm.h>
 #include <inttypes.h>
-#include <mcu/cortex_m3.h>
 
-/**
- * Boots the image described by the supplied image header.
- *
- * @param hdr                   The header for the image to boot.
+/* when you are implementing a driver for the hal_pwm. This is the interface
+ * you must provide.
  */
-void
-system_start(void *img_start)
-{
-    typedef void jump_fn(void);
 
-    uint32_t base0entry;
-    uint32_t jump_addr;
-    jump_fn *fn;
+struct hal_pwm;
 
-    /* First word contains initial MSP value. */
-    __set_MSP(*(uint32_t *)img_start);
+struct hal_pwm_funcs {
+    /* the low level hal API */
+    int     (*hpwm_get_bits)        (struct hal_pwm *ppwm);
+    int     (*hpwm_get_clk)         (struct hal_pwm *ppwm);
+    int     (*hpwm_disable)         (struct hal_pwm *ppwm);
+    int     (*hpwm_ena_duty)  (struct hal_pwm *ppwm, uint16_t frac_duty);
+    int     (*hpwm_set_freq)  (struct hal_pwm *ppwm, uint32_t freq_hz);
 
-    /* Second word contains address of entry point (Reset_Handler). */
-    base0entry = *(uint32_t *)(img_start + 4);
-    jump_addr = base0entry;
-    fn = (jump_fn *)jump_addr;
+};
 
-    /* Remap memory such that flash gets mapped to the code region. */
-    SYSCFG->MEMRMP = 0;
-    __DSB();
+struct hal_pwm {
+    const struct hal_pwm_funcs *driver_api;
+};
 
-    /* Jump to image. */
-    fn();
+struct hal_pwm *
+bsp_get_hal_pwm_driver(enum system_device_id sysid);
+
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* H_HAL_PWM_INT_ */
 

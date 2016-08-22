@@ -16,39 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#include <hal/hal_spi.h>
+#include <hal/hal_spi_int.h>
 
-#include <assert.h>
-#include <stddef.h>
-#include <inttypes.h>
-#include <mcu/cortex_m3.h>
-
-/**
- * Boots the image described by the supplied image header.
- *
- * @param hdr                   The header for the image to boot.
- */
-void
-system_start(void *img_start)
+struct hal_spi *
+hal_spi_init(enum system_device_id pin) 
 {
-    typedef void jump_fn(void);
-
-    uint32_t base0entry;
-    uint32_t jump_addr;
-    jump_fn *fn;
-
-    /* First word contains initial MSP value. */
-    __set_MSP(*(uint32_t *)img_start);
-
-    /* Second word contains address of entry point (Reset_Handler). */
-    base0entry = *(uint32_t *)(img_start + 4);
-    jump_addr = base0entry;
-    fn = (jump_fn *)jump_addr;
-
-    /* Remap memory such that flash gets mapped to the code region. */
-    SYSCFG->MEMRMP = 0;
-    __DSB();
-
-    /* Jump to image. */
-    fn();
+    return bsp_get_hal_spi(pin);
 }
 
+int 
+hal_spi_config(struct hal_spi *pspi, struct hal_spi_settings *psettings) 
+{
+    if (pspi && pspi->driver_api && pspi->driver_api->hspi_config) {
+        return pspi->driver_api->hspi_config(pspi, psettings);
+    }
+    return -1;
+}
+
+int 
+hal_spi_master_transfer(struct hal_spi *pspi, uint16_t val) 
+{
+    if (pspi && pspi->driver_api && pspi->driver_api->hspi_master_transfer) {
+        return pspi->driver_api->hspi_master_transfer(pspi, val);
+    }
+    return -1;
+}

@@ -6,7 +6,7 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
@@ -16,39 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+#ifndef H_HAL_OS_TICK_
+#define H_HAL_OS_TICK_
 
-#include <assert.h>
-#include <stddef.h>
-#include <inttypes.h>
-#include <mcu/cortex_m3.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/**
- * Boots the image described by the supplied image header.
- *
- * @param hdr                   The header for the image to boot.
+#include <os/os_time.h>
+
+/*
+ * Set up the periodic timer to interrupt at a frequency of 'os_ticks_per_sec'.
+ * 'prio' is the cpu-specific priority of the periodic timer interrupt.
  */
-void
-system_start(void *img_start)
-{
-    typedef void jump_fn(void);
+void os_tick_init(uint32_t os_ticks_per_sec, int prio);
 
-    uint32_t base0entry;
-    uint32_t jump_addr;
-    jump_fn *fn;
+/*
+ * Halt CPU for up to 'n' ticks.
+ */
+void os_tick_idle(os_time_t n);
 
-    /* First word contains initial MSP value. */
-    __set_MSP(*(uint32_t *)img_start);
 
-    /* Second word contains address of entry point (Reset_Handler). */
-    base0entry = *(uint32_t *)(img_start + 4);
-    jump_addr = base0entry;
-    fn = (jump_fn *)jump_addr;
-
-    /* Remap memory such that flash gets mapped to the code region. */
-    SYSCFG->MEMRMP = 0;
-    __DSB();
-
-    /* Jump to image. */
-    fn();
+#ifdef __cplusplus
 }
+#endif
 
+#endif /* H_HAL_OS_TICK_ */

@@ -17,38 +17,32 @@
  * under the License.
  */
 
-#include <assert.h>
-#include <stddef.h>
-#include <inttypes.h>
-#include <mcu/cortex_m3.h>
+#ifndef __MCU_STM32L152_BSP_H_
+#define __MCU_STM32L152_BSP_H_
 
 /**
- * Boots the image described by the supplied image header.
- *
- * @param hdr                   The header for the image to boot.
+ * BSP specific UART settings.
  */
-void
-system_start(void *img_start)
-{
-    typedef void jump_fn(void);
+struct stm32f4_uart_cfg {
+    USART_TypeDef *suc_uart;			/* UART dev registers */
+    volatile uint32_t *suc_rcc_reg;		/* RCC register to modify */
+    uint32_t suc_rcc_dev;			/* RCC device ID */
+    int8_t suc_pin_tx;				/* pins for IO */
+    int8_t suc_pin_rx;
+    int8_t suc_pin_rts;
+    int8_t suc_pin_cts;
+    uint8_t suc_pin_af;				/* AF selection for this */
+    IRQn_Type suc_irqn;				/* NVIC IRQn */
+};
 
-    uint32_t base0entry;
-    uint32_t jump_addr;
-    jump_fn *fn;
+const struct stm32f4_uart_cfg *bsp_uart_config(int port);
 
-    /* First word contains initial MSP value. */
-    __set_MSP(*(uint32_t *)img_start);
+/*
+ * Internal API for stm32L152 mcu specific code.
+ */
+int hal_gpio_init_af(int pin, uint8_t af_type, enum gpio_pull pull);
 
-    /* Second word contains address of entry point (Reset_Handler). */
-    base0entry = *(uint32_t *)(img_start + 4);
-    jump_addr = base0entry;
-    fn = (jump_fn *)jump_addr;
+struct hal_flash;
+extern struct hal_flash stm32f4_flash_dev;
 
-    /* Remap memory such that flash gets mapped to the code region. */
-    SYSCFG->MEMRMP = 0;
-    __DSB();
-
-    /* Jump to image. */
-    fn();
-}
-
+#endif /* __MCU_STM32L152_BSP_H_ */

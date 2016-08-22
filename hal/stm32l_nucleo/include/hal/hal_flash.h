@@ -6,7 +6,7 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
@@ -17,38 +17,27 @@
  * under the License.
  */
 
-#include <assert.h>
-#include <stddef.h>
+#ifndef H_HAL_FLASH_
+#define H_HAL_FLASH_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <inttypes.h>
-#include <mcu/cortex_m3.h>
 
-/**
- * Boots the image described by the supplied image header.
- *
- * @param hdr                   The header for the image to boot.
- */
-void
-system_start(void *img_start)
-{
-    typedef void jump_fn(void);
+int hal_flash_read(uint8_t flash_id, uint32_t address, void *dst,
+  uint32_t num_bytes);
+int hal_flash_write(uint8_t flash_id, uint32_t address, const void *src,
+  uint32_t num_bytes);
+int hal_flash_erase_sector(uint8_t flash_id, uint32_t sector_address);
+int hal_flash_erase(uint8_t flash_id, uint32_t address, uint32_t num_bytes);
+uint8_t hal_flash_align(uint8_t flash_id);
+int hal_flash_init(void);
 
-    uint32_t base0entry;
-    uint32_t jump_addr;
-    jump_fn *fn;
 
-    /* First word contains initial MSP value. */
-    __set_MSP(*(uint32_t *)img_start);
-
-    /* Second word contains address of entry point (Reset_Handler). */
-    base0entry = *(uint32_t *)(img_start + 4);
-    jump_addr = base0entry;
-    fn = (jump_fn *)jump_addr;
-
-    /* Remap memory such that flash gets mapped to the code region. */
-    SYSCFG->MEMRMP = 0;
-    __DSB();
-
-    /* Jump to image. */
-    fn();
+#ifdef __cplusplus
 }
+#endif
 
+#endif /* H_HAL_FLASH_ */

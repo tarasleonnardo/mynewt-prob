@@ -6,7 +6,7 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
@@ -17,38 +17,37 @@
  * under the License.
  */
 
-#include <assert.h>
-#include <stddef.h>
+
+#ifndef H_HAL_I2C_INT_
+#define H_HAL_I2C_INT_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <hal/hal_i2c.h>
 #include <inttypes.h>
-#include <mcu/cortex_m3.h>
 
-/**
- * Boots the image described by the supplied image header.
- *
- * @param hdr                   The header for the image to boot.
- */
-void
-system_start(void *img_start)
-{
-    typedef void jump_fn(void);
+struct hal_i2c;
 
-    uint32_t base0entry;
-    uint32_t jump_addr;
-    jump_fn *fn;
+struct hal_i2c_funcs {
+    int (*hi2cm_write_data) (struct hal_i2c *pi2c, struct hal_i2c_master_data *ppkt);
+    int (*hi2cm_read_data)  (struct hal_i2c *pi2c, struct hal_i2c_master_data *ppkt);
+    int (*hi2cm_probe)      (struct hal_i2c *pi2c, uint8_t address);
+    int (*hi2cm_start)      (struct hal_i2c *pi2c);
+    int (*hi2cm_stop)       (struct hal_i2c *pi2c);
+};
 
-    /* First word contains initial MSP value. */
-    __set_MSP(*(uint32_t *)img_start);
+struct hal_i2c {
+    const struct hal_i2c_funcs *driver_api;
+};
 
-    /* Second word contains address of entry point (Reset_Handler). */
-    base0entry = *(uint32_t *)(img_start + 4);
-    jump_addr = base0entry;
-    fn = (jump_fn *)jump_addr;
+struct hal_i2c *
+bsp_get_hal_i2c_driver(enum system_device_id sysid);
 
-    /* Remap memory such that flash gets mapped to the code region. */
-    SYSCFG->MEMRMP = 0;
-    __DSB();
-
-    /* Jump to image. */
-    fn();
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* H_HAL_I2C_INT_ */
 
